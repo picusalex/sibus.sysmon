@@ -113,7 +113,7 @@ signal.signal(signal.SIGTERM, sigterm_handler)
 
 try:
     while 1:
-        message = MessageObject(data=get_sysmon(), topic="system.monitor")
+        message = MessageObject(data=get_sysmon(), topic="info.system.monitor")
         sysmon_busclient.publish(message)
         time.sleep(10)
 except KeyboardInterrupt:

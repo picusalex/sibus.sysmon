@@ -1,25 +1,51 @@
 #!/usr/bin/env bash
 
-pip install sibus_lib psutil uptime
+SERVICE="sibus.sysmon"
 
-SERVICE="system.monitor.service"
+INSTALL_DIR=`pwd`
+SERVICE_PATH="$INSTALL_DIR/sibus.sysmon.py"
+SYSTEMD_SERVICE="$SERVICE.service"
+SYSTEMD_ORG="$INSTALL_DIR/systemd-config"
+SYSTEMD_TMP="$INSTALL_DIR/$SYSTEMD_SERVICE"
+SYSTEMD_DST="/lib/systemd/system/$SYSTEMD_SERVICE"
 
-SERVICE_ORG="./$SERVICE"
-SERVICE_DST="/etc/init.d/$SERVICE"
+echo " # Update folder from git repository"
+git fetch origin master
+git reset --hard origin/master
 
-if [ ! -e $SERVICE_ORG ]; then
-    echo "ERROR: file $SERVICE_ORG not found !"
+if [ ! -e $SERVICE_PATH ]; then
+    echo " !!! ERROR: file $SERVICE_PATH not found !!!"
+    echo " (script must be run from its own directory !)"
     exit 1
 fi
+sudo chmod +x $SERVICE_PATH
 
-echo "Installing service $SERVICE"
-chmod 0755 $SERVICE_ORG
-if [ -e SERVICE_DST ]; then
-    sudo unlink $SERVICE_DST
+echo " # Checking service $SERVICE dependencies"
+PKG_OK=$(dpkg-query -W --showformat='${Status}\n' mplayer | grep "install ok installed")
+if [ "" == "$PKG_OK" ]; then
+  echo "Installing mplayer"
+  sudo apt-get update
+  sudo apt-get --force-yes --yes install mplayer
 fi
-sudo ln -s -v $SERVICE_ORG $SERVICE_DST
 
-echo "Enable service $SERVICE at boot"
-sudo update-rc.d $SERVICE defaults
+sudo pip install --upgrade sibus_lib
 
+echo " # Patching service $SERVICE systemd config file..."
+sed 's|<SCRIPT_PATH>|'$SERVICE_PATH'|g' $SYSTEMD_ORG > "/tmp/tmp.systemd"
+sed 's|<SCRIPT_DIR>|'$INSTALL_DIR'|g' "/tmp/tmp.systemd" > "/tmp/tmp2.systemd"
+sed 's|<USER>|'$USER'|g' "/tmp/tmp2.systemd" > $SYSTEMD_TMP
+echo " = systemd config: "
+cat $SYSTEMD_TMP
+
+echo " # Installing service $SERVICE"
+sudo cp -fv $SYSTEMD_TMP $SYSTEMD_DST
+sudo systemctl daemon-reload
+
+echo " # Enable & start service $SERVICE at boot"
+sudo systemctl enable $SYSTEMD_SERVICE
+sudo systemctl start $SYSTEMD_SERVICE
+
+echo " # Service $SERVICE status"
+sudo systemctl status $SYSTEMD_SERVICE
 exit 0
+
