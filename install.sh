@@ -21,14 +21,8 @@ fi
 sudo chmod +x $SERVICE_PATH
 
 echo " # Checking service $SERVICE dependencies"
-PKG_OK=$(dpkg-query -W --showformat='${Status}\n' mplayer | grep "install ok installed")
-if [ "" == "$PKG_OK" ]; then
-  echo "Installing mplayer"
-  sudo apt-get update
-  sudo apt-get --force-yes --yes install mplayer
-fi
 
-sudo pip install --upgrade sibus_lib
+sudo pip install --upgrade psutil sibus_lib
 
 echo " # Patching service $SERVICE systemd config file..."
 sed 's|<SCRIPT_PATH>|'$SERVICE_PATH'|g' $SYSTEMD_ORG > "/tmp/tmp.systemd"
