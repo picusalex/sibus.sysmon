@@ -22,7 +22,7 @@ sudo chmod +x $SERVICE_PATH
 
 echo " # Checking service $SERVICE dependencies"
 
-sudo pip install --upgrade psutil sibus_lib
+sudo pip install --upgrade psutil uptime sibus_lib
 
 echo " # Patching service $SERVICE systemd config file..."
 sed 's|<SCRIPT_PATH>|'$SERVICE_PATH'|g' $SYSTEMD_ORG > "/tmp/tmp.systemd"
